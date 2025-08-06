@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>POS System - รายรับ / รายจ่าย (แยกตามวัน)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      --card-gradient: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+      --navbar-gradient: linear-gradient(90deg, #00bcd4, #4fc3f7, #81c784);
+      --glow-primary: #667eea;
+      --glow-secondary: #f093fb;
+      --income-gradient: linear-gradient(135deg, #4caf50, #8bc34a);
+      --expense-gradient: linear-gradient(135deg, #f44336, #ff5722);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--primary-gradient);
+      min-height: 100vh;
+      font-family: 'Kanit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.95);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Floating particles background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+      animation: float 20s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0px) rotate(0deg);
+      }
+
+      50% {
+        transform: translateY(-20px) rotate(180deg);
+      }
+    }
+
+    /* Container */
+    .container {
+      position: relative;
+      z-index: 10;
+      padding-bottom: 50px;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: var(--navbar-gradient);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      user-select: none;
+      position: relative;
+      z-index: 1000;
+    }
+
+    .navbar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
+    .navbar-brand {
+      color: white !important;
+      font-size: 1.8rem;
+      font-weight: 900;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+      position: relative;
+      z-index: 10;
+      background: linear-gradient(45deg, #fff, #f0f8ff, #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: textGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes textGlow {
+      from {
+        filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+      }
+
+      to {
+        filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.6));
+      }
+    }
+
+    .nav-link {
+      color: rgba(255, 255, 255, 0.95) !important;
+      font-weight: 600;
+      font-size: 1.1rem;
+      padding: 12px 24px;
+      border-radius: 50px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .nav-link:hover::before {
+      left: 100%;
+    }
+
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      text-decoration: none;
+    }
+
+    .nav-link.active {
+      background: rgba(255, 255, 255, 0.25) !important;
+      font-weight: 700;
+    }
+
+    /* Section Headers */
+    h2 {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 30px;
+      color: white;
+      /* เปลี่ยนเป็นสีขาวธรรมดา */
+      background: none;
+      /* ลบ gradient */
+      -webkit-background-clip: unset;
+      -webkit-text-fill-color: unset;
+      background-clip: unset;
+      animation: none;
+      /* ปิด animation */
+      text-shadow: none;
+      /* ไม่มีเงา */
+      position: relative;
+      text-align: center;
+    }
+
+
+    @keyframes gradientMove {
+
+      0%,
+      100% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+    }
+
+    h4,
+    h5 {
+      color: #fff;
+      font-weight: 700;
+      text-shadow: 0 0 20px rgba(240, 147, 251, 0.8);
+      position: relative;
+      display: inline-block;
+    }
+
+    h4 {
+      font-size: 1.8rem;
+      margin-bottom: 25px;
+    }
+
+    h4::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, #f093fb, transparent);
+      border-radius: 2px;
+    }
+
+    h5 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+
+    /* Filter Buttons */
+    .filter-container {
+      margin-bottom: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 50px;
+      padding: 12px 30px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-outline-primary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+    }
+
+    .btn-outline-primary:hover,
+    .btn-outline-primary.active {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-color: transparent;
+      color: white;
+    }
+
+    .btn-outline-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .btn-outline-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.4);
+      color: white;
+    }
+
+    /* Transaction Cards */
+    .transaction-day-card {
+      background: var(--card-gradient);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 30px;
+      overflow: hidden;
+      position: relative;
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .transaction-day-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+      animation: rotate 10s linear infinite;
+      z-index: -1;
+    }
+
+    @keyframes rotate {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .day-header {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 20px;
+      background: linear-gradient(45deg, #fff, #f093fb);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+    }
+
+    /* Table Styling */
+    .table {
+      color: rgba(255, 255, 255, 0.95);
+      margin-bottom: 0;
+      border-collapse: separate;
+      border-spacing: 0 8px;
+    }
+
+    .table thead th {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 15px;
+      font-weight: 700;
+      text-align: center;
+      position: relative;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .table thead th:first-child {
+      border-top-left-radius: 15px;
+      border-bottom-left-radius: 15px;
+    }
+
+    .table thead th:last-child {
+      border-top-right-radius: 15px;
+      border-bottom-right-radius: 15px;
+    }
+
+    .table tbody td {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      text-align: center;
+      font-weight: 500;
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .table tbody tr:hover td {
+      background: rgba(240, 147, 251, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(240, 147, 251, 0.2);
+    }
+
+    /* Summary Section */
+    .summary-section {
+      background: var(--card-gradient);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 30px;
+      position: relative;
+      overflow: hidden;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .summary-section::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+      animation: rotate 8s linear infinite;
+      z-index: -1;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .summary-row:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .summary-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .summary-label {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .summary-amount {
+      font-size: 1.8rem;
+      font-weight: 900;
+      text-shadow: 0 0 20px currentColor;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    #totalIncome {
+      background: var(--income-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #totalExpense {
+      background: var(--expense-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.02);
+      }
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .empty-state .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+
+    .empty-state h6 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .empty-state p {
+      font-size: 1rem;
+      opacity: 0.6;
+      margin: 0;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Floating Animation for Cards */
+    .floating {
+      animation: cardFloat 6s ease-in-out infinite;
+    }
+
+    @keyframes cardFloat {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px 15px;
+      }
+
+      h2 {
+        font-size: 2.5rem;
+      }
+
+      .filter-container {
+        justify-content: center;
+      }
+
+      .btn {
+        font-size: 0.9rem;
+        padding: 10px 20px;
+      }
+
+      .transaction-day-card {
+        padding: 20px 15px;
+      }
+
+      .summary-section {
+        padding: 25px 20px;
+      }
+
+      .summary-row {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+      }
+
+      .summary-label {
+        font-size: 1.2rem;
+        justify-content: center;
+      }
+
+      .summary-amount {
+        font-size: 1.5rem;
+      }
+
+      .table {
+        font-size: 0.9rem;
+      }
+
+      .navbar-brand {
+        font-size: 1.5rem;
+      }
+
+      .nav-link {
+        font-size: 1rem;
+        padding: 10px 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid px-4 px-md-5">
+      <a class="navbar-brand" href="index.html">🏪 POS System</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="product.html">📦 จัดการสินค้า</a></li>
+          <li class="nav-item"><a class="nav-link" href="sale.html">💰 ขายสินค้า</a></li>
+          <li class="nav-item"><a class="nav-link" href="transactions.html">📊 รายรับ/รายจ่าย</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+
+  <div class="container mt-4">
+
+
+
+    <h2>📊 รายรับ / รายจ่าย</h2>
+
+    <div class="button-group mb-4">
+      <button class="btn btn-outline-primary" id="filterToday">📅 วันนี้</button>
+      <button class="btn btn-outline-primary" id="filterYesterday">📆 เมื่อวาน</button>
+      <button class="btn btn-outline-primary" id="filter7days">📈 7 วันที่ผ่านมา</button>
+      <button class="btn btn-outline-primary" id="filterAll">📋 ทั้งหมด</button>
+    </div>
+
+    <div id="transactionsContainer">
+      <!-- วันนี้ -->
+      <div class="transaction-day-card floating" data-range="today">
+        <div class="day-header">📅 วันนี้ - 5 สิงหาคม 2025</div>
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>⏰ เวลา</th>
+              <th>📝 รายการ</th>
+              <th>💰 จำนวน</th>
+              <th>📊 ประเภท</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>09:30</td>
+              <td>ขายสินค้า - ข้าวโพดคั่ว</td>
+              <td>250.00 บาท</td>
+              <td><span style="color: #4caf50; font-weight: bold;">รายรับ</span></td>
+            </tr>
+            <tr>
+              <td>10:15</td>
+              <td>ขายสินค้า - น้ำดื่ม</td>
+              <td>120.00 บาท</td>
+              <td><span style="color: #4caf50; font-weight: bold;">รายรับ</span></td>
+            </tr>
+            <tr>
+              <td>11:00</td>
+              <td>ซื้อวัตถุดิบ</td>
+              <td>500.00 บาท</td>
+              <td><span style="color: #f44336; font-weight: bold;">รายจ่าย</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- เมื่อวาน -->
+      <div class="transaction-day-card floating" data-range="yesterday">
+        <div class="day-header">📅 เมื่อวาน - 4 สิงหาคม 2025</div>
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>⏰ เวลา</th>
+              <th>📝 รายการ</th>
+              <th>💰 จำนวน</th>
+              <th>📊 ประเภท</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>08:45</td>
+              <td>ขายสินค้า - กาแฟ</td>
+              <td>180.00 บาท</td>
+              <td><span style="color: #4caf50; font-weight: bold;">รายรับ</span></td>
+            </tr>
+            <tr>
+              <td>14:20</td>
+              <td>ขายสินค้า - ขนมปัง</td>
+              <td>95.00 บาท</td>
+              <td><span style="color: #4caf50; font-weight: bold;">รายรับ</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ✅ JavaScript สำหรับกรอง -->
+    <script>
+      const buttons = {
+        today: document.getElementById('filterToday'),
+        yesterday: document.getElementById('filterYesterday'),
+        week: document.getElementById('filter7days'),
+        all: document.getElementById('filterAll')
+      };
+
+      const cards = document.querySelectorAll('.transaction-day-card');
+
+      function filterBy(range) {
+        cards.forEach(card => {
+          const cardRange = card.getAttribute('data-range');
+          if (range === 'all') {
+            card.style.display = 'block';
+          } else if (range === '7days') {
+            // แสดงทั้ง today และ yesterday (ถ้าคุณมีมากกว่า 2 วันให้ใช้วันที่จริง)
+            card.style.display = (cardRange === 'today' || cardRange === 'yesterday') ? 'block' : 'none';
+          } else {
+            card.style.display = (cardRange === range) ? 'block' : 'none';
+          }
+        });
+      }
+
+      // โหลดหน้าเว็บ: แสดงเฉพาะวันนี้
+      window.addEventListener('DOMContentLoaded', () => {
+        filterBy('today');
+      });
+
+      // ปุ่มควบคุมการกรอง
+      buttons.today.addEventListener('click', () => filterBy('today'));
+      buttons.yesterday.addEventListener('click', () => filterBy('yesterday'));
+      buttons.week.addEventListener('click', () => filterBy('7days'));
+      buttons.all.addEventListener('click', () => filterBy('all'));
+    </script>
+
+
+    <!-- HTML -->
+    <div class="summary-section floating">
+      <div class="summary-row income-box">
+        <div class="summary-label">💚 รายรับรวม:</div>
+        <div class="summary-amount" id="totalIncome">645.00 บาท</div>
+      </div>
+
+      <div class="summary-row expense-box">
+        <div class="summary-label">❤️ รายจ่ายรวม:</div>
+        <div class="summary-amount" id="totalExpense">500.00 บาท</div>
+      </div>
+    </div>
+
+    <!-- CSS -->
+    <style>
+      .summary-section {
+        max-width: 400px;
+        margin: 30px auto;
+      }
+
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 20px;
+        margin-bottom: 15px;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 18px;
+        align-items: center;
+      }
+
+      .income-box {
+        background-color: #e0fce6;
+        /* เขียวอ่อน */
+        border: 2px solid #000000;
+        /* ขอบดำ */
+        color: #1b5e20;
+        /* เขียวเข้ม */
+      }
+
+      .expense-box {
+        background-color: #ffe0e0;
+        /* แดงอ่อน */
+        border: 2px solid #ffffff;
+        /* ขอบขาว */
+        color: #b71c1c;
+        /* แดงเข้ม */
+      }
+
+      .summary-label,
+      .summary-amount {
+        color: inherit;
+        /* ใช้สีเดียวกับกล่อง */
+      }
+
+      .summary-label {
+        flex: 1;
+      }
+
+      .summary-amount {
+        text-align: right;
+        min-width: 120px;
+      }
+    </style>
+
+  </div>
+
+  <script src="transactions.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Add interactive hover effects to nav links
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('mouseenter', function () {
+        this.style.transform = 'translateY(-3px) scale(1.05)';
+      });
+
+      link.addEventListener('mouseleave', function () {
+        this.style.transform = 'translateY(0) scale(1)';
+      });
+    });
+
+    // Add filter button interactions
+    document.querySelectorAll('.filter-container .btn').forEach(button => {
+      button.addEventListener('click', function () {
+        // Remove active class from all buttons
+        document.querySelectorAll('.filter-container .btn').forEach(btn => {
+          btn.classList.remove('active');
+        });
+
+        // Add active class to clicked button
+        this.classList.add('active');
+
+        // Add click animation
+        this.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          this.style.transform = '';
+        }, 150);
+      });
+    });
+
+    // Set default active filter (Today)
+    document.getElementById('filterToday').classList.add('active');
+
+    // Add stagger animation to transaction cards
+    const cards = document.querySelectorAll('.transaction-day-card');
+    cards.forEach((card, index) => {
+      card.style.animationDelay = `${index * 0.1}s`;
+    });
+  </script>
+</body>
+
+</html>

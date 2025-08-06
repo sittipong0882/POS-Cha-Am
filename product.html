@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <title>POS System - จัดการสินค้า</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      --card-gradient: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+      --navbar-gradient: linear-gradient(90deg, #00bcd4, #4fc3f7, #81c784);
+      --form-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+      --table-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+      --glow-primary: #667eea;
+      --glow-secondary: #f093fb;
+      --success-gradient: linear-gradient(135deg, #56ab2f, #a8e6cf);
+      --danger-gradient: linear-gradient(135deg, #ff416c, #ff4b2b);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--primary-gradient);
+      min-height: 100vh;
+      font-family: 'Kanit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.95);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Floating particles background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+      animation: float 20s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0px) rotate(0deg);
+      }
+
+      50% {
+        transform: translateY(-20px) rotate(180deg);
+      }
+    }
+
+    /* Navbar */
+    .navbar {
+      background: var(--navbar-gradient);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      user-select: none;
+      position: relative;
+      z-index: 1000;
+    }
+
+    .navbar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
+    .navbar-brand {
+      color: white !important;
+      font-size: 2.2rem;
+      font-weight: 900;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+      position: relative;
+      z-index: 10;
+      background: linear-gradient(45deg, #fff, #f0f8ff, #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: textGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes textGlow {
+      from {
+        filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+      }
+
+      to {
+        filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.6));
+      }
+    }
+
+    .nav-link {
+      color: rgba(255, 255, 255, 0.95) !important;
+      font-weight: 600;
+      font-size: 1.1rem;
+      padding: 12px 24px;
+      border-radius: 50px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .nav-link:hover::before {
+      left: 100%;
+    }
+
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      text-decoration: none;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin-top: 40px;
+      margin-bottom: 40px;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Main Card */
+    .main-card {
+      background: var(--card-gradient);
+      backdrop-filter: blur(20px);
+      border-radius: 30px;
+      padding: 40px;
+      box-shadow:
+        0 25px 80px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+      animation: cardFloat 6s ease-in-out infinite;
+    }
+
+    @keyframes cardFloat {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-5px);
+      }
+    }
+
+    .main-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+      animation: rotate 15s linear infinite;
+      z-index: -1;
+    }
+
+    @keyframes rotate {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    h2 {
+      font-size: 3rem;
+      font-weight: 900;
+      margin-bottom: 30px;
+      color: white;
+      /* กำหนดสีขาวธรรมดา */
+      background: none;
+      /* ลบ background gradient */
+      -webkit-background-clip: unset;
+      -webkit-text-fill-color: unset;
+      background-clip: unset;
+      animation: none;
+      /* ปิด animation */
+      text-align: center;
+      position: relative;
+    }
+
+
+    @keyframes gradientMove {
+
+      0%,
+      100% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+    }
+
+    h2::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #f093fb, transparent);
+      border-radius: 2px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.5;
+        transform: translateX(-50%) scaleX(1);
+      }
+
+      50% {
+        opacity: 1;
+        transform: translateX(-50%) scaleX(1.2);
+      }
+    }
+
+    /* Form Styling */
+    .form-card {
+      background: var(--form-gradient);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 40px;
+      box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .form-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg,
+          rgba(255, 255, 255, 0.05) 0%,
+          transparent 50%,
+          rgba(255, 255, 255, 0.05) 100%);
+      background-size: 30px 30px;
+      opacity: 0.3;
+      animation: move 15s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes move {
+      0% {
+        transform: translate(0, 0);
+      }
+
+      100% {
+        transform: translate(30px, 30px);
+      }
+    }
+
+    .form-control {
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      color: white;
+      font-weight: 500;
+      padding: 12px 20px;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      position: relative;
+      z-index: 10;
+    }
+
+    .form-control:focus {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: #f093fb;
+      box-shadow: 0 0 20px rgba(240, 147, 251, 0.4);
+      color: white;
+      transform: scale(1.02);
+    }
+
+    .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 400;
+    }
+
+    /* Button Styling */
+    .btn-success {
+      background: var(--success-gradient);
+      border: none;
+      border-radius: 15px;
+      padding: 12px 30px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 8px 25px rgba(86, 171, 47, 0.4);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-success::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn-success:hover::before {
+      left: 100%;
+    }
+
+    .btn-success:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 15px 35px rgba(86, 171, 47, 0.6);
+      background: linear-gradient(135deg, #66bb6a, #81c784);
+    }
+
+    .btn-danger {
+      background: var(--danger-gradient);
+      border: none;
+      border-radius: 10px;
+      padding: 8px 20px;
+      font-weight: 600;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 5px 15px rgba(255, 65, 108, 0.4);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-danger::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn-danger:hover::before {
+      left: 100%;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-2px) scale(1.1);
+      box-shadow: 0 10px 25px rgba(255, 65, 108, 0.6);
+      background: linear-gradient(135deg, #ff6b6b, #ff8a80);
+    }
+
+    /* Table Styling */
+    .table-container {
+      background: var(--table-gradient);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 40px;
+      box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .table {
+      background: transparent;
+      color: rgba(255, 255, 255, 0.95);
+      margin-bottom: 0;
+    }
+
+    .table thead th {
+      background: linear-gradient(135deg, #00bcd4, #4fc3f7);
+      color: white;
+      font-weight: 700;
+      font-size: 1.1rem;
+      border: none;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0, 188, 212, 0.3);
+      position: relative;
+    }
+
+    .table thead th::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    }
+
+    .table tbody tr {
+      transition: all 0.3s ease;
+      border: none;
+    }
+
+    .table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.02);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .table tbody td {
+      border: none;
+      padding: 15px;
+      text-align: center;
+      font-weight: 500;
+      vertical-align: middle;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Chart Container */
+    .chart-container {
+      background: var(--table-gradient);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 30px;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(240, 147, 251, 0.8);
+      text-align: center;
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .chart-title::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #f093fb, transparent);
+      border-radius: 2px;
+    }
+
+    #stockChart {
+      max-width: 100%;
+      height: 400px !important;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Loading Animation */
+    .loading {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #f093fb;
+      animation: spin 1s ease-in-out infinite;
+      margin: 50px auto;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .main-card {
+        padding: 20px;
+        margin: 10px;
+        border-radius: 20px;
+      }
+
+      .form-card {
+        padding: 20px;
+      }
+
+      .table-container {
+        padding: 15px;
+      }
+
+      .chart-container {
+        padding: 20px;
+      }
+
+      h2 {
+        font-size: 2.2rem;
+      }
+
+      .chart-title {
+        font-size: 1.6rem;
+      }
+
+      .navbar-brand {
+        font-size: 1.8rem;
+      }
+
+      .nav-link {
+        font-size: 1rem;
+        padding: 10px 18px;
+      }
+
+      #stockChart {
+        height: 300px !important;
+      }
+
+      .form-control {
+        font-size: 1rem;
+        padding: 10px 15px;
+      }
+
+      .btn-success {
+        font-size: 1rem;
+        padding: 10px 25px;
+      }
+    }
+
+    /* Animations */
+    @media (prefers-reduced-motion: no-preference) {
+
+      .main-card,
+      .form-card,
+      .table-container,
+      .chart-container {
+        animation: fadeInUp 1s ease-out;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Success/Error Messages */
+    .alert {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      color: white;
+      font-weight: 500;
+    }
+
+    .alert-success {
+      border-color: rgba(76, 175, 80, 0.5);
+      background: rgba(76, 175, 80, 0.2);
+    }
+
+    .alert-danger {
+      border-color: rgba(244, 67, 54, 0.5);
+      background: rgba(244, 67, 54, 0.2);
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid px-4 px-md-5">
+      <a class="navbar-brand" href="index.html">🏪 POS System</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="product.html">📦 จัดการสินค้า</a></li>
+          <li class="nav-item"><a class="nav-link" href="sale.html">💰 ขายสินค้า</a></li>
+          <li class="nav-item"><a class="nav-link" href="transactions.html">📊 รายรับ/รายจ่าย</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+
+
+  <div class="container">
+    <div class="main-card">
+      <h2>📦 จัดการสินค้าในระบบ</h2>
+
+      <div class="form-card">
+        <style>
+          /* เปลี่ยนสีข้อความใน input และ button เป็นดำ */
+          .form-card input,
+          .form-card button {
+            color: black !important;
+          }
+
+          /* เปลี่ยน placeholder เป็นสีดำจาง */
+          .form-card input::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+          }
+        </style>
+
+        <form id="addProductForm" class="row g-3">
+          <div class="col-md-3">
+            <input type="text" class="form-control" id="productName" placeholder="🏷️ ชื่อสินค้า" required>
+          </div>
+          <div class="col-md-3">
+            <input type="number" class="form-control" id="productPrice" placeholder="💰 ราคา (บาท)" step="0.01"
+              required>
+          </div>
+          <div class="col-md-3">
+            <input type="number" class="form-control" id="productStock" placeholder="📦 จำนวนสต็อก" required>
+          </div>
+          <div class="col-md-3">
+            <button type="submit" class="btn btn-success w-100">
+              ✨ เพิ่มสินค้าใหม่
+            </button>
+          </div>
+        </form>
+      </div>
+
+
+      <div id="alertContainer"></div>
+
+      <div class="table-container">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>🏷️ ชื่อสินค้า</th>
+              <th>💰 ราคา (บาท)</th>
+              <th>📦 สต็อกคงเหลือ</th>
+              <th>⚙️ จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="productTable"></tbody>
+        </table>
+      </div>
+
+      <div class="chart-container">
+        <h4 class="chart-title">📊 กราฟแสดงจำนวนสต็อกสินค้า</h4>
+        <div id="loading" class="loading" style="display: block; text-align: center;"></div>
+        <canvas id="stockChart" style="display: none;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const productTable = document.getElementById("productTable");
+      const addProductForm = document.getElementById("addProductForm");
+      const alertContainer = document.getElementById("alertContainer");
+      let products = JSON.parse(localStorage.getItem("products") || "[]");
+      let stockChart;
+
+      // แสดงข้อความแจ้งเตือน
+      function showAlert(message, type = 'success') {
+        alertContainer.innerHTML = `
+          <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${type === 'success' ? '✅' : '❌'} ${message}
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+
+        setTimeout(() => {
+          const alert = alertContainer.querySelector('.alert');
+          if (alert) {
+            alert.remove();
+          }
+        }, 5000);
+      }
+
+      // แสดงสินค้าในตาราง
+      function renderProducts() {
+        if (products.length === 0) {
+          productTable.innerHTML = `
+            <tr>
+              <td colspan="4" class="text-center" style="padding: 40px; font-size: 1.2rem; opacity: 0.7;">
+                📦 ยังไม่มีสินค้าในระบบ กรุณาเพิ่มสินค้าใหม่
+              </td>
+            </tr>
+          `;
+        } else {
+          productTable.innerHTML = "";
+          products.forEach((p, index) => {
+            const stockStatus = p.stock === 0 ? '❌ หมด' : p.stock < 10 ? '⚠️ ใกล้หมด' : '✅ พอ';
+            const stockClass = p.stock === 0 ? 'text-danger' : p.stock < 10 ? 'text-warning' : 'text-success';
+
+            productTable.innerHTML += `
+              <tr style="animation: fadeInUp 0.5s ease-out ${index * 0.1}s both;">
+                <td style="font-weight: 600;">${p.name}</td>
+                <td style="font-weight: 600;">${p.price.toFixed(2)}</td>
+                <td class="${stockClass}" style="font-weight: 600;">${p.stock} ${stockStatus}</td>
+                <td>
+                  <button class="btn btn-danger btn-sm" data-index="${index}" title="ลบสินค้า">
+                    🗑️ ลบ
+                  </button>
+                </td>
+              </tr>
+            `;
+          });
+        }
+
+        updateStockChart();
+      }
+
+      // อัพเดตกราฟแท่งแสดงจำนวนสต็อก
+      function updateStockChart() {
+        setTimeout(() => {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('stockChart').style.display = 'block';
+
+          const ctx = document.getElementById("stockChart").getContext("2d");
+
+          if (products.length === 0) {
+            // แสดงกราฟตัวอย่างถ้าไม่มีข้อมูล
+            const sampleLabels = ['สินค้าตัวอย่าง A', 'สินค้าตัวอย่าง B', 'สินค้าตัวอย่าง C'];
+            const sampleData = [50, 30, 20];
+            createChart(ctx, sampleLabels, sampleData, true);
+          } else {
+            const labels = products.map(p => p.name);
+            const data = products.map(p => p.stock);
+            createChart(ctx, labels, data, false);
+          }
+        }, 1000);
+      }
+
+      function createChart(ctx, labels, data, isSample) {
+        if (stockChart) stockChart.destroy();
+
+        // Create multiple gradients for bars
+        const gradients = [];
+        const colors = [
+          ['#667eea', '#764ba2'],
+          ['#f093fb', '#f5576c'],
+          ['#4facfe', '#00f2fe'],
+          ['#43e97b', '#38f9d7'],
+          ['#fa709a', '#fee140'],
+          ['#a8edea', '#fed6e3'],
+          ['#ff9a9e', '#fecfef']
+        ];
+
+        colors.forEach((colorPair, index) => {
+          const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+          gradient.addColorStop(0, colorPair[0]);
+          gradient.addColorStop(1, colorPair[1]);
+          gradients.push(gradient);
+        });
+
+        stockChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: isSample ? "ข้อมูลตัวอย่าง" : "จำนวนสต็อก",
+              data: data,
+              backgroundColor: gradients.slice(0, labels.length),
+              borderColor: '#ffffff',
+              borderWidth: 2,
+              borderRadius: 15,
+              borderSkipped: false,
+              barPercentage: 0.8,
+              categoryPercentage: 0.7,
+              hoverBackgroundColor: gradients.slice(0, labels.length),
+              hoverBorderColor: '#f093fb',
+              hoverBorderWidth: 3
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+              duration: 1500,
+              easing: 'easeOutBounce',
+              delay: (context) => context.dataIndex * 100
+            },
+            interaction: {
+              intersect: false,
+              mode: 'index'
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                precision: 0,
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)',
+                  borderDash: [5, 5],
+                  drawBorder: false
+                },
+                ticks: {
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  font: {
+                    size: 14,
+                    weight: '600',
+                    family: 'Kanit'
+                  },
+                  padding: 10
+                },
+                title: {
+                  display: true,
+                  text: '📦 จำนวน (หน่วย)',
+                  color: 'rgba(255, 255, 255, 0.95)',
+                  font: {
+                    size: 16,
+                    weight: '700',
+                    family: 'Kanit'
+                  },
+                  padding: 20
+                }
+              },
+              x: {
+                grid: {
+                  display: false
+                },
+                ticks: {
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  font: {
+                    size: 14,
+                    weight: '600',
+                    family: 'Kanit'
+                  },
+                  maxRotation: 45,
+                  padding: 10
+                },
+                title: {
+                  display: true,
+                  text: '🏷️ รายการสินค้า',
+                  color: 'rgba(255, 255, 255, 0.95)',
+                  font: {
+                    size: 16,
+                    weight: '700',
+                    family: 'Kanit'
+                  },
+                  padding: 20
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                backgroundColor: 'rgba(30, 30, 60, 0.95)',
+                titleFont: {
+                  weight: '700',
+                  size: 16,
+                  family: 'Kanit'
+                },
+                bodyFont: {
+                  size: 14,
+                  family: 'Kanit'
+                },
+                cornerRadius: 15,
+                padding: 15,
+                displayColors: false,
+                borderColor: '#f093fb',
+                borderWidth: 2,
+                titleColor: '#f093fb',
+                bodyColor: '#ffffff',
+                callbacks: {
+                  title: function (context) {
+                    return '📦 ' + context[0].label;
+                  },
+                  label: function (context) {
+                    if (isSample) {
+                      return '📊 ตัวอย่าง: ' + context.parsed.y + ' หน่วย';
+                    }
+                    const stock = context.parsed.y;
+                    const status = stock === 0 ? ' (หมดสต็อก)' : stock < 10 ? ' (ใกล้หมด)' : ' (พอเพียง)';
+                    return '📊 สต็อกคงเหลือ: ' + stock + ' หน่วย' + status;
+                  }
+                }
+              }
+            },
+            elements: {
+              bar: {
+                borderRadius: 15
+              }
+            }
+          }
+        });
+      }
+
+      // เพิ่มสินค้าใหม่
+      addProductForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const name = document.getElementById("productName").value.trim();
+        const price = parseFloat(document.getElementById("productPrice").value);
+        const stock = parseInt(document.getElementById("productStock").value);
+
+        if (!name || isNaN(price) || isNaN(stock)) {
+          showAlert("กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง", 'danger');
+          return;
+        }
+
+        if (price < 0) {
+          showAlert("ราคาสินค้าต้องมากกว่าหรือเท่ากับ 0", 'danger');
+          return;
+        }
+
+        if (stock < 0) {
+          showAlert("จำนวนสต็อกต้องมากกว่าหรือเท่ากับ 0", 'danger');
+          return;
+        }
+
+        // ตรวจสอบว่ามีสินค้าชื่อซ้ำหรือไม่
+        const existingProduct = products.find(p => p.name.toLowerCase() === name.toLowerCase());
+        if (existingProduct) {
+          showAlert("มีสินค้าชื่อนี้อยู่ในระบบแล้ว", 'danger');
+          return;
+        }
+
+        products.push({ name, price, stock });
+        localStorage.setItem("products", JSON.stringify(products));
+
+        addProductForm.reset();
+        renderProducts();
+        showAlert(`เพิ่มสินค้า "${name}" เรียบร้อยแล้ว`);
+
+        // เพิ่มเอฟเฟกต์แฟลช
+        const submitBtn = addProductForm.querySelector('button[type="submit"]');
+        submitBtn.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          submitBtn.style.transform = 'scale(1)';
+        }, 150);
+      });
+
+      // ลบสินค้า
+      productTable.addEventListener("click", function (e) {
+        if (e.target.tagName === "BUTTON" || e.target.closest('button')) {
+          const button = e.target.tagName === "BUTTON" ? e.target : e.target.closest('button');
+          const index = button.getAttribute("data-index");
+          const productName = products[index].name;
+
+          // ยืนยันการลบ
+          if (confirm(`คุณต้องการลบสินค้า "${productName}" ใช่หรือไม่?`)) {
+            products.splice(index, 1);
+            localStorage.setItem("products", JSON.stringify(products));
+            renderProducts();
+            showAlert(`ลบสินค้า "${productName}" เรียบร้อยแล้ว`);
+          }
+        }
+      });
+
+      // เพิ่มเอฟเฟกต์ hover สำหรับปุ่ม
+      document.addEventListener('mouseover', function (e) {
+        if (e.target.classList.contains('btn-success')) {
+          e.target.style.transform = 'translateY(-2px) scale(1.02)';
+        }
+        if (e.target.classList.contains('btn-danger')) {
+          e.target.style.transform = 'translateY(-1px) scale(1.05)';
+        }
+      });
+
+      document.addEventListener('mouseout', function (e) {
+        if (e.target.classList.contains('btn-success')) {
+          e.target.style.transform = 'translateY(0) scale(1)';
+        }
+        if (e.target.classList.contains('btn-danger')) {
+          e.target.style.transform = 'translateY(0) scale(1)';
+        }
+      });
+
+      // เพิ่มเอฟเฟกต์ focus สำหรับ input
+      document.querySelectorAll('.form-control').forEach(input => {
+        input.addEventListener('focus', function () {
+          this.parentElement.style.transform = 'scale(1.02)';
+        });
+
+        input.addEventListener('blur', function () {
+          this.parentElement.style.transform = 'scale(1)';
+        });
+      });
+
+      // แสดงสินค้าครั้งแรก
+      renderProducts();
+
+      // เพิ่มข้อมูลตัวอย่างถ้าไม่มีสินค้า
+      if (products.length === 0) {
+        setTimeout(() => {
+          showAlert("💡 เริ่มต้นใช้งานด้วยการเพิ่มสินค้าแรกของคุณ", 'success');
+        }, 2000);
+      }
+    });
+  </script>
+
+  <!-- Bootstrap Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

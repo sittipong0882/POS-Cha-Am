@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>POS System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <!-- Custom Style -->
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      --card-gradient: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+      --navbar-gradient: linear-gradient(90deg, #00bcd4, #4fc3f7, #81c784);
+      --glow-primary: #667eea;
+      --glow-secondary: #f093fb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--primary-gradient);
+      min-height: 100vh;
+      font-family: 'Kanit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.95);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Floating particles background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+      animation: float 20s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0px) rotate(0deg);
+      }
+
+      50% {
+        transform: translateY(-20px) rotate(180deg);
+      }
+    }
+
+    /* Navbar */
+    .navbar {
+      background: var(--navbar-gradient);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      user-select: none;
+      position: relative;
+      z-index: 1000;
+    }
+
+    .navbar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
+    .navbar-brand {
+      color: white !important;
+      font-size: 2.2rem;
+      font-weight: 900;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+      position: relative;
+      z-index: 10;
+      background: linear-gradient(45deg, #fff, #f0f8ff, #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: textGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes textGlow {
+      from {
+        filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+      }
+
+      to {
+        filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.6));
+      }
+    }
+
+    .nav-link {
+      color: rgba(255, 255, 255, 0.95) !important;
+      font-weight: 600;
+      font-size: 1.1rem;
+      padding: 12px 24px;
+      border-radius: 50px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .nav-link:hover::before {
+      left: 100%;
+    }
+
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      text-decoration: none;
+    }
+
+    .nav-item.active .nav-link,
+    .nav-link.active {
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.7);
+      transform: scale(1.05);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1000px;
+      margin-top: 60px;
+      margin-bottom: 60px;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Card */
+    .card {
+      background: var(--card-gradient);
+      backdrop-filter: blur(20px);
+      border-radius: 30px;
+      padding: 50px 40px;
+      box-shadow:
+        0 25px 80px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center;
+      color: rgba(255, 255, 255, 0.95);
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+      animation: cardFloat 6s ease-in-out infinite;
+    }
+
+    @keyframes cardFloat {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      animation: rotate 10s linear infinite;
+      z-index: -1;
+    }
+
+    @keyframes rotate {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Heading */
+    .card h1 {
+      font-size: 4rem;
+      font-weight: 900;
+      margin-bottom: 20px;
+      color: white !important;
+      /* กำหนดสีขาว */
+      background: none !important;
+      /* ลบ background gradient */
+      -webkit-background-clip: unset !important;
+      -webkit-text-fill-color: unset !important;
+      background-clip: unset !important;
+      animation: none !important;
+      /* ปิด animation */
+      text-shadow: none;
+      position: relative;
+    }
+
+
+    @keyframes gradientMove {
+
+      0%,
+      100% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+    }
+
+    .card p {
+      font-size: 1.6rem;
+      font-weight: 500;
+      margin-bottom: 60px;
+      letter-spacing: 0.02em;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      opacity: 0.9;
+    }
+
+    .card h3 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 40px;
+      color: #fff;
+      text-shadow: 0 0 30px rgba(240, 147, 251, 0.8);
+      position: relative;
+      display: inline-block;
+    }
+
+    .card h3::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #f093fb, transparent);
+      border-radius: 2px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.5;
+        transform: translateX(-50%) scaleX(1);
+      }
+
+      50% {
+        opacity: 1;
+        transform: translateX(-50%) scaleX(1.2);
+      }
+    }
+
+    /* Chart Container */
+    .chart-container {
+      position: relative;
+      margin: 0 auto;
+      padding: 30px;
+      border-radius: 25px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(15px);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    .chart-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg,
+          rgba(255, 255, 255, 0.1) 0%,
+          transparent 50%,
+          rgba(255, 255, 255, 0.1) 100%);
+      background-size: 20px 20px;
+      opacity: 0.3;
+      animation: move 10s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes move {
+      0% {
+        transform: translate(0, 0);
+      }
+
+      100% {
+        transform: translate(20px, 20px);
+      }
+    }
+
+    #bestSellingChart {
+      max-width: 100%;
+      height: 500px !important;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Loading Animation */
+    .loading {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #f093fb;
+      animation: spin 1s ease-in-out infinite;
+      margin: 50px auto;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .card {
+        padding: 30px 20px;
+        margin: 20px;
+        border-radius: 25px;
+      }
+
+      .card h1 {
+        font-size: 2.8rem;
+      }
+
+      .card p {
+        font-size: 1.3rem;
+        margin-bottom: 40px;
+      }
+
+      .card h3 {
+        font-size: 2rem;
+        margin-bottom: 30px;
+      }
+
+      #bestSellingChart {
+        height: 350px !important;
+      }
+
+      .nav-link {
+        font-size: 1rem;
+        padding: 10px 18px;
+      }
+
+      .navbar-brand {
+        font-size: 1.8rem;
+      }
+
+      .chart-container {
+        padding: 20px;
+      }
+    }
+
+    /* Scroll animations */
+    @media (prefers-reduced-motion: no-preference) {
+      .card {
+        animation: fadeInUp 1s ease-out;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid px-4 px-md-5">
+      <a class="navbar-brand" href="index.html">🏪 POS System</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="product.html">📦 จัดการสินค้า</a></li>
+          <li class="nav-item"><a class="nav-link" href="sale.html">💰 ขายสินค้า</a></li>
+          <li class="nav-item"><a class="nav-link" href="transactions.html">📊 รายรับ/รายจ่าย</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="card">
+      <h1>ระบบ POS ร้านชะอำเพื่อสัตว์</h1>
+      <p>✨ ระบบจัดการร้านค้าครบวงจร พร้อมรายงานแบบเรียลไทม์ ✨</p>
+      <h3>🏆 สินค้าขายดีที่สุด</h3>
+      <div class="chart-container">
+        <div id="loading" class="loading" style="display: block;"></div>
+        <canvas id="bestSellingChart" style="display: none;"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bootstrap Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Simulate loading
+      setTimeout(() => {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('bestSellingChart').style.display = 'block';
+
+        const transactions = JSON.parse(localStorage.getItem("transactions") || "[]");
+
+        const productSales = {};
+        transactions.forEach(t => {
+          if (t.type === "income" && Array.isArray(t.products)) {
+            t.products.forEach(p => {
+              if (!productSales[p.name]) productSales[p.name] = 0;
+              productSales[p.name] += p.qty;
+            });
+          }
+        });
+
+        const productNames = Object.keys(productSales);
+        const quantities = productNames.map(name => productSales[name]);
+
+        // If no data, show sample data
+        if (productNames.length === 0) {
+          productNames.push('สินค้าตัวอย่าง A', 'สินค้าตัวอย่าง B', 'สินค้าตัวอย่าง C');
+          quantities.push(25, 15, 10);
+        }
+
+        const ctx = document.getElementById('bestSellingChart').getContext('2d');
+
+        // Create multiple gradients for bars
+        const gradients = [];
+        const colors = [
+          ['#667eea', '#764ba2'],
+          ['#f093fb', '#f5576c'],
+          ['#4facfe', '#00f2fe'],
+          ['#43e97b', '#38f9d7'],
+          ['#fa709a', '#fee140']
+        ];
+
+        colors.forEach((colorPair, index) => {
+          const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+          gradient.addColorStop(0, colorPair[0]);
+          gradient.addColorStop(1, colorPair[1]);
+          gradients.push(gradient);
+        });
+
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: productNames,
+            datasets: [{
+              label: 'จำนวนที่ขายได้ (หน่วย)',
+              data: quantities,
+              backgroundColor: gradients.slice(0, productNames.length),
+              borderColor: '#ffffff',
+              borderWidth: 2,
+              borderRadius: 15,
+              borderSkipped: false,
+              barPercentage: 0.8,
+              categoryPercentage: 0.7,
+              hoverBackgroundColor: gradients.slice(0, productNames.length),
+              hoverBorderColor: '#f093fb',
+              hoverBorderWidth: 3,
+              shadowOffsetX: 5,
+              shadowOffsetY: 5,
+              shadowBlur: 10,
+              shadowColor: 'rgba(0, 0, 0, 0.3)'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+              duration: 1500,
+              easing: 'easeOutBounce',
+              delay: (context) => context.dataIndex * 100
+            },
+            interaction: {
+              intersect: false,
+              mode: 'index'
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                precision: 0,
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)',
+                  borderDash: [5, 5],
+                  drawBorder: false
+                },
+                ticks: {
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  font: {
+                    size: 14,
+                    weight: '600',
+                    family: 'Kanit'
+                  },
+                  padding: 10
+                },
+                title: {
+                  display: true,
+                  text: '📈 จำนวน (หน่วย)',
+                  color: 'rgba(255, 255, 255, 0.95)',
+                  font: {
+                    size: 16,
+                    weight: '700',
+                    family: 'Kanit'
+                  },
+                  padding: 20
+                }
+              },
+              x: {
+                grid: {
+                  display: false
+                },
+                ticks: {
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  font: {
+                    size: 14,
+                    weight: '600',
+                    family: 'Kanit'
+                  },
+                  maxRotation: 45,
+                  padding: 10
+                },
+                title: {
+                  display: true,
+                  text: '🛍️ รายการสินค้า',
+                  color: 'rgba(255, 255, 255, 0.95)',
+                  font: {
+                    size: 16,
+                    weight: '700',
+                    family: 'Kanit'
+                  },
+                  padding: 20
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                backgroundColor: 'rgba(30, 30, 60, 0.95)',
+                titleFont: {
+                  weight: '700',
+                  size: 16,
+                  family: 'Kanit'
+                },
+                bodyFont: {
+                  size: 14,
+                  family: 'Kanit'
+                },
+                cornerRadius: 15,
+                padding: 15,
+                displayColors: false,
+                borderColor: '#f093fb',
+                borderWidth: 2,
+                titleColor: '#f093fb',
+                bodyColor: '#ffffff',
+                callbacks: {
+                  title: function (context) {
+                    return '🏆 ' + context[0].label;
+                  },
+                  label: function (context) {
+                    return '📊 ขายได้: ' + context.parsed.y + ' หน่วย';
+                  }
+                }
+              }
+            },
+            elements: {
+              bar: {
+                borderRadius: 15
+              }
+            }
+          }
+        });
+
+      }, 1500);
+    });
+
+    // Add some interactive hover effects
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('mouseenter', function () {
+        this.style.transform = 'translateY(-3px) scale(1.05)';
+      });
+
+      link.addEventListener('mouseleave', function () {
+        this.style.transform = 'translateY(0) scale(1)';
+      });
+    });
+  </script>
+</body>
+
+</html>

@@ -11,15 +11,17 @@ document.addEventListener("DOMContentLoaded", function () {
       const card = document.createElement("div");
       card.className = "col-md-3 mb-2";
       card.innerHTML = `
-        <div class="card p-2">
-          <h5 style="color: black;">${p.name}</h5>
-          <p>ราคา: ${p.price} บาท<br>คงเหลือ: ${p.stock}</p>
-          <button class="btn btn-primary btn-sm" onclick="addToCart(${i})">เพิ่มลงตะกร้า</button>
-        </div>
-      `;
+    <div class="card p-2 h-100">
+      <img src="${p.image || 'https://via.placeholder.com/180?text=No+Image'}" class="card-img-top" alt="${p.name}" style="height:180px;object-fit:cover;">
+      <h5 style="color: black;">${p.name}</h5>
+      <p>ราคา: ${p.price} บาท<br>คงเหลือ: ${p.stock}</p>
+      <button class="btn btn-primary btn-sm" onclick="addToCart(${i})">เพิ่มลงตะกร้า</button>
+    </div>
+  `;
       productList.appendChild(card);
     });
   }
+
 
   window.addToCart = function (index) {
     const products = JSON.parse(localStorage.getItem("products") || "[]");

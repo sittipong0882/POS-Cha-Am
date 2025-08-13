@@ -446,7 +446,7 @@
 
   <main class="container">
     <div class="card">
-      <h1>ระบบ POS ร้านชะอำเพื่อสัตว์</h1>
+      <h1>ระบบ POS ร้านชะอำเพื่อนสัตว์ </h1>
       <p>✨ ระบบจัดการร้านค้าครบวงจร พร้อมรายงานแบบเรียลไทม์ ✨</p>
       <h3>🏆 สินค้าขายดีที่สุด</h3>
       <div class="chart-container">
@@ -479,8 +479,15 @@
           }
         });
 
-        const productNames = Object.keys(productSales);
-        const quantities = productNames.map(name => productSales[name]);
+
+        // เรียงลำดับยอดขายจากมากไปน้อยและเลือก top 3
+        const sorted = Object.entries(productSales)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3);
+
+        const productNames = sorted.map(item => item[0]);
+        const quantities = sorted.map(item => item[1]);
+
 
         // If no data, show sample data
         if (productNames.length === 0) {

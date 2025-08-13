@@ -10,7 +10,7 @@
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root {
       --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
@@ -684,383 +684,430 @@
           <div class="col-md-3">
             <input type="number" class="form-control" id="productStock" placeholder="📦 จำนวนสต็อก" required>
           </div>
+          <!-- เพิ่มในฟอร์ม product.html -->
+
+
+          <div class="col-md-3">
+            <input type="file" class="form-control" id="productImage" accept="image/*">
+            <img id="previewImage" src="" style="display:none;max-width:120px;margin-top:10px;">
+          </div>
           <div class="col-md-3">
             <button type="submit" class="btn btn-success w-100">
               ✨ เพิ่มสินค้าใหม่
             </button>
           </div>
         </form>
-      </div>
 
+        <div id="alertContainer"></div>
 
-      <div id="alertContainer"></div>
+        <div class="table-container">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>🏷️ ชื่อสินค้า</th>
+                <th>💰 ราคา (บาท)</th>
+                <th>📦 สต็อกคงเหลือ</th>
+                <th>🖼️ รูปสินค้า</th>
+                <th>⚙️ จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="productTable"></tbody>
+          </table>
+        </div>
 
-      <div class="table-container">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>🏷️ ชื่อสินค้า</th>
-              <th>💰 ราคา (บาท)</th>
-              <th>📦 สต็อกคงเหลือ</th>
-              <th>⚙️ จัดการ</th>
-            </tr>
-          </thead>
-          <tbody id="productTable"></tbody>
-        </table>
-      </div>
-
-      <div class="chart-container">
-        <h4 class="chart-title">📊 กราฟแสดงจำนวนสต็อกสินค้า</h4>
-        <div id="loading" class="loading" style="display: block; text-align: center;"></div>
-        <canvas id="stockChart" style="display: none;"></canvas>
+        <div class="chart-container">
+          <h4 class="chart-title">📊 กราฟแสดงจำนวนสต็อกสินค้า</h4>
+          <div id="loading" class="loading" style="display: block; text-align: center;"></div>
+          <canvas id="stockChart" style="display: none;"></canvas>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const productTable = document.getElementById("productTable");
-      const addProductForm = document.getElementById("addProductForm");
-      const alertContainer = document.getElementById("alertContainer");
-      let products = JSON.parse(localStorage.getItem("products") || "[]");
-      let stockChart;
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const productTable = document.getElementById("productTable");
+        const addProductForm = document.getElementById("addProductForm");
+        const alertContainer = document.getElementById("alertContainer");
+        let products = JSON.parse(localStorage.getItem("products") || "[]");
+        let stockChart;
 
-      // แสดงข้อความแจ้งเตือน
-      function showAlert(message, type = 'success') {
-        alertContainer.innerHTML = `
+        // แสดงข้อความแจ้งเตือน
+        function showAlert(message, type = 'success') {
+          alertContainer.innerHTML = `
           <div class="alert alert-${type} alert-dismissible fade show" role="alert">
             ${type === 'success' ? '✅' : '❌'} ${message}
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
           </div>
         `;
 
-        setTimeout(() => {
-          const alert = alertContainer.querySelector('.alert');
-          if (alert) {
-            alert.remove();
+          setTimeout(() => {
+            const alert = alertContainer.querySelector('.alert');
+            if (alert) {
+              alert.remove();
+            }
+          }, 5000);
+        }
+        let imageBase64 = "";
+        const productImageInput = document.getElementById("productImage");
+        const previewImage = document.getElementById("previewImage");
+
+        // แสดง preview รูปเมื่อเลือกไฟล์
+        productImageInput.addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          if (!file) {
+            imageBase64 = "";
+            previewImage.style.display = "none";
+            return;
           }
-        }, 5000);
-      }
+          const reader = new FileReader();
+          reader.onload = function (evt) {
+            imageBase64 = evt.target.result;
+            previewImage.src = imageBase64;
+            previewImage.style.display = "block";
+          };
+          reader.readAsDataURL(file);
+        });
+        // แสดงสินค้าในตาราง
+        function renderProducts() {
+          if (products.length === 0) {
+            productTable.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center" style="padding: 40px; font-size: 1.2rem; opacity: 0.7;">
+          📦 ยังไม่มีสินค้าในระบบ กรุณาเพิ่มสินค้าใหม่
+        </td>
+      </tr>
+    `;
+          } else {
+            productTable.innerHTML = "";
+            products.forEach((p, index) => {
+              const stockStatus = p.stock === 0 ? '❌ หมด' : p.stock < 10 ? '⚠️ ใกล้หมด' : '✅ พอ';
+              const stockClass = p.stock === 0 ? 'text-danger' : p.stock < 10 ? 'text-warning' : 'text-success';
 
-      // แสดงสินค้าในตาราง
-      function renderProducts() {
-        if (products.length === 0) {
-          productTable.innerHTML = `
-            <tr>
-              <td colspan="4" class="text-center" style="padding: 40px; font-size: 1.2rem; opacity: 0.7;">
-                📦 ยังไม่มีสินค้าในระบบ กรุณาเพิ่มสินค้าใหม่
-              </td>
-            </tr>
-          `;
-        } else {
-          productTable.innerHTML = "";
-          products.forEach((p, index) => {
-            const stockStatus = p.stock === 0 ? '❌ หมด' : p.stock < 10 ? '⚠️ ใกล้หมด' : '✅ พอ';
-            const stockClass = p.stock === 0 ? 'text-danger' : p.stock < 10 ? 'text-warning' : 'text-success';
+              productTable.innerHTML += `
+        <tr style="animation: fadeInUp 0.5s ease-out ${index * 0.1}s both;">
+          <td style="font-weight: 600;">${p.name}</td>
+          <td style="font-weight: 600;">${p.price.toFixed(2)}</td>
+          <td class="${stockClass}" style="font-weight: 600;">${p.stock} ${stockStatus}</td>
+          <td>${p.image ? `<img src="${p.image}" style="max-width:60px;max-height:60px;">` : ""}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" data-index="${index}" title="ลบสินค้า">
+              🗑️ ลบ
+            </button>
+          </td>
+        </tr>
+      `;
+            });
+          }
+          updateStockChart();
+        }
 
-            productTable.innerHTML += `
-              <tr style="animation: fadeInUp 0.5s ease-out ${index * 0.1}s both;">
-                <td style="font-weight: 600;">${p.name}</td>
-                <td style="font-weight: 600;">${p.price.toFixed(2)}</td>
-                <td class="${stockClass}" style="font-weight: 600;">${p.stock} ${stockStatus}</td>
-                <td>
-                  <button class="btn btn-danger btn-sm" data-index="${index}" title="ลบสินค้า">
-                    🗑️ ลบ
-                  </button>
-                </td>
-              </tr>
-            `;
+
+
+        // อัพเดตกราฟแท่งแสดงจำนวนสต็อก
+        function updateStockChart() {
+          setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('stockChart').style.display = 'block';
+
+            const ctx = document.getElementById("stockChart").getContext("2d");
+
+            if (products.length === 0) {
+              // แสดงกราฟตัวอย่างถ้าไม่มีข้อมูล
+              const sampleLabels = ['สินค้าตัวอย่าง A', 'สินค้าตัวอย่าง B', 'สินค้าตัวอย่าง C'];
+              const sampleData = [50, 30, 20];
+              createChart(ctx, sampleLabels, sampleData, true);
+            } else {
+              const labels = products.map(p => p.name);
+              const data = products.map(p => p.stock);
+              createChart(ctx, labels, data, false);
+            }
+          }, 1000);
+        }
+
+        function createChart(ctx, labels, data, isSample) {
+          if (stockChart) stockChart.destroy();
+
+          // Create multiple gradients for bars
+          const gradients = [];
+          const colors = [
+            ['#667eea', '#764ba2'],
+            ['#f093fb', '#f5576c'],
+            ['#4facfe', '#00f2fe'],
+            ['#43e97b', '#38f9d7'],
+            ['#fa709a', '#fee140'],
+            ['#a8edea', '#fed6e3'],
+            ['#ff9a9e', '#fecfef']
+          ];
+
+          colors.forEach((colorPair, index) => {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, colorPair[0]);
+            gradient.addColorStop(1, colorPair[1]);
+            gradients.push(gradient);
+          });
+
+          stockChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: labels,
+              datasets: [{
+                label: isSample ? "ข้อมูลตัวอย่าง" : "จำนวนสต็อก",
+                data: data,
+                backgroundColor: gradients.slice(0, labels.length),
+                borderColor: '#ffffff',
+                borderWidth: 2,
+                borderRadius: 15,
+                borderSkipped: false,
+                barPercentage: 0.8,
+                categoryPercentage: 0.7,
+                hoverBackgroundColor: gradients.slice(0, labels.length),
+                hoverBorderColor: '#f093fb',
+                hoverBorderWidth: 3
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                duration: 1500,
+                easing: 'easeOutBounce',
+                delay: (context) => context.dataIndex * 100
+              },
+              interaction: {
+                intersect: false,
+                mode: 'index'
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  precision: 0,
+                  grid: {
+                    color: 'rgba(255, 255, 255, 0.1)',
+                    borderDash: [5, 5],
+                    drawBorder: false
+                  },
+                  ticks: {
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    font: {
+                      size: 14,
+                      weight: '600',
+                      family: 'Kanit'
+                    },
+                    padding: 10
+                  },
+                  title: {
+                    display: true,
+                    text: '📦 จำนวน (หน่วย)',
+                    color: 'rgba(255, 255, 255, 0.95)',
+                    font: {
+                      size: 16,
+                      weight: '700',
+                      family: 'Kanit'
+                    },
+                    padding: 20
+                  }
+                },
+                x: {
+                  grid: {
+                    display: false
+                  },
+                  ticks: {
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    font: {
+                      size: 14,
+                      weight: '600',
+                      family: 'Kanit'
+                    },
+                    maxRotation: 45,
+                    padding: 10
+                  },
+                  title: {
+                    display: true,
+                    text: '🏷️ รายการสินค้า',
+                    color: 'rgba(255, 255, 255, 0.95)',
+                    font: {
+                      size: 16,
+                      weight: '700',
+                      family: 'Kanit'
+                    },
+                    padding: 20
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  backgroundColor: 'rgba(30, 30, 60, 0.95)',
+                  titleFont: {
+                    weight: '700',
+                    size: 16,
+                    family: 'Kanit'
+                  },
+                  bodyFont: {
+                    size: 14,
+                    family: 'Kanit'
+                  },
+                  cornerRadius: 15,
+                  padding: 15,
+                  displayColors: false,
+                  borderColor: '#f093fb',
+                  borderWidth: 2,
+                  titleColor: '#f093fb',
+                  bodyColor: '#ffffff',
+                  callbacks: {
+                    title: function (context) {
+                      return '📦 ' + context[0].label;
+                    },
+                    label: function (context) {
+                      if (isSample) {
+                        return '📊 ตัวอย่าง: ' + context.parsed.y + ' หน่วย';
+                      }
+                      const stock = context.parsed.y;
+                      const status = stock === 0 ? ' (หมดสต็อก)' : stock < 10 ? ' (ใกล้หมด)' : ' (พอเพียง)';
+                      return '📊 สต็อกคงเหลือ: ' + stock + ' หน่วย' + status;
+                    }
+                  }
+                }
+              },
+              elements: {
+                bar: {
+                  borderRadius: 15
+                }
+              }
+            }
           });
         }
 
-        updateStockChart();
-      }
+        // เพิ่มสินค้าใหม่
+        addProductForm.addEventListener("submit", function (e) {
+          e.preventDefault();
 
-      // อัพเดตกราฟแท่งแสดงจำนวนสต็อก
-      function updateStockChart() {
-        setTimeout(() => {
-          document.getElementById('loading').style.display = 'none';
-          document.getElementById('stockChart').style.display = 'block';
+          const name = document.getElementById("productName").value.trim();
+          const price = parseFloat(document.getElementById("productPrice").value);
+          const stock = parseInt(document.getElementById("productStock").value);
 
-          const ctx = document.getElementById("stockChart").getContext("2d");
-
-          if (products.length === 0) {
-            // แสดงกราฟตัวอย่างถ้าไม่มีข้อมูล
-            const sampleLabels = ['สินค้าตัวอย่าง A', 'สินค้าตัวอย่าง B', 'สินค้าตัวอย่าง C'];
-            const sampleData = [50, 30, 20];
-            createChart(ctx, sampleLabels, sampleData, true);
-          } else {
-            const labels = products.map(p => p.name);
-            const data = products.map(p => p.stock);
-            createChart(ctx, labels, data, false);
+          if (!name || isNaN(price) || isNaN(stock)) {
+            showAlert("กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง", 'danger');
+            return;
           }
-        }, 1000);
-      }
 
-      function createChart(ctx, labels, data, isSample) {
-        if (stockChart) stockChart.destroy();
+          if (price < 0) {
+            showAlert("ราคาสินค้าต้องมากกว่าหรือเท่ากับ 0", 'danger');
+            return;
+          }
 
-        // Create multiple gradients for bars
-        const gradients = [];
-        const colors = [
-          ['#667eea', '#764ba2'],
-          ['#f093fb', '#f5576c'],
-          ['#4facfe', '#00f2fe'],
-          ['#43e97b', '#38f9d7'],
-          ['#fa709a', '#fee140'],
-          ['#a8edea', '#fed6e3'],
-          ['#ff9a9e', '#fecfef']
-        ];
+          if (stock < 0) {
+            showAlert("จำนวนสต็อกต้องมากกว่าหรือเท่ากับ 0", 'danger');
+            return;
+          }
 
-        colors.forEach((colorPair, index) => {
-          const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-          gradient.addColorStop(0, colorPair[0]);
-          gradient.addColorStop(1, colorPair[1]);
-          gradients.push(gradient);
+          // ตรวจสอบว่ามีสินค้าชื่อซ้ำหรือไม่
+          const existingProduct = products.find(p => p.name.toLowerCase() === name.toLowerCase());
+          if (existingProduct) {
+            showAlert("มีสินค้าชื่อนี้อยู่ในระบบแล้ว", 'danger');
+            return;
+          }
+
+          products.push({ name, price, stock, image: imageBase64 });
+          localStorage.setItem("products", JSON.stringify(products));
+
+          addProductForm.reset();
+          imageBase64 = "";
+          previewImage.style.display = "none";
+          renderProducts();
+          showAlert(`เพิ่มสินค้า "${name}" เรียบร้อยแล้ว`);
+
+          // เพิ่มเอฟเฟกต์แฟลช
+          const submitBtn = addProductForm.querySelector('button[type="submit"]');
+          submitBtn.style.transform = 'scale(0.95)';
+          setTimeout(() => {
+            submitBtn.style.transform = 'scale(1)';
+          }, 150);
         });
 
-        stockChart = new Chart(ctx, {
-          type: "bar",
-          data: {
-            labels: labels,
-            datasets: [{
-              label: isSample ? "ข้อมูลตัวอย่าง" : "จำนวนสต็อก",
-              data: data,
-              backgroundColor: gradients.slice(0, labels.length),
-              borderColor: '#ffffff',
-              borderWidth: 2,
-              borderRadius: 15,
-              borderSkipped: false,
-              barPercentage: 0.8,
-              categoryPercentage: 0.7,
-              hoverBackgroundColor: gradients.slice(0, labels.length),
-              hoverBorderColor: '#f093fb',
-              hoverBorderWidth: 3
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-              duration: 1500,
-              easing: 'easeOutBounce',
-              delay: (context) => context.dataIndex * 100
-            },
-            interaction: {
-              intersect: false,
-              mode: 'index'
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                precision: 0,
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.1)',
-                  borderDash: [5, 5],
-                  drawBorder: false
-                },
-                ticks: {
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  font: {
-                    size: 14,
-                    weight: '600',
-                    family: 'Kanit'
-                  },
-                  padding: 10
-                },
-                title: {
-                  display: true,
-                  text: '📦 จำนวน (หน่วย)',
-                  color: 'rgba(255, 255, 255, 0.95)',
-                  font: {
-                    size: 16,
-                    weight: '700',
-                    family: 'Kanit'
-                  },
-                  padding: 20
-                }
-              },
-              x: {
-                grid: {
-                  display: false
-                },
-                ticks: {
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  font: {
-                    size: 14,
-                    weight: '600',
-                    family: 'Kanit'
-                  },
-                  maxRotation: 45,
-                  padding: 10
-                },
-                title: {
-                  display: true,
-                  text: '🏷️ รายการสินค้า',
-                  color: 'rgba(255, 255, 255, 0.95)',
-                  font: {
-                    size: 16,
-                    weight: '700',
-                    family: 'Kanit'
-                  },
-                  padding: 20
-                }
+        // ลบสินค้า
+        productTable.addEventListener("click", function (e) {
+          if (e.target.tagName === "BUTTON" || e.target.closest('button')) {
+            const button = e.target.tagName === "BUTTON" ? e.target : e.target.closest('button');
+            const index = button.getAttribute("data-index");
+            const productName = products[index].name;
+
+            // SweetAlert2 ยืนยันการลบ
+            Swal.fire({
+              title: 'ยืนยันการลบ',
+              text: `คุณต้องการลบสินค้า "${productName}" ใช่หรือไม่?`,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#d33',
+              cancelButtonColor: '#3085d6',
+              confirmButtonText: 'ลบสินค้า',
+              cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+              if (result.isConfirmed) {
+                products.splice(index, 1);
+                localStorage.setItem("products", JSON.stringify(products));
+                renderProducts();
+
+                Swal.fire({
+                  title: 'ลบสำเร็จ',
+                  text: `ลบสินค้า "${productName}" เรียบร้อยแล้ว`,
+                  icon: 'success',
+                  timer: 1500,
+                  showConfirmButton: false
+                });
               }
-            },
-            plugins: {
-              legend: {
-                display: false
-              },
-              tooltip: {
-                backgroundColor: 'rgba(30, 30, 60, 0.95)',
-                titleFont: {
-                  weight: '700',
-                  size: 16,
-                  family: 'Kanit'
-                },
-                bodyFont: {
-                  size: 14,
-                  family: 'Kanit'
-                },
-                cornerRadius: 15,
-                padding: 15,
-                displayColors: false,
-                borderColor: '#f093fb',
-                borderWidth: 2,
-                titleColor: '#f093fb',
-                bodyColor: '#ffffff',
-                callbacks: {
-                  title: function (context) {
-                    return '📦 ' + context[0].label;
-                  },
-                  label: function (context) {
-                    if (isSample) {
-                      return '📊 ตัวอย่าง: ' + context.parsed.y + ' หน่วย';
-                    }
-                    const stock = context.parsed.y;
-                    const status = stock === 0 ? ' (หมดสต็อก)' : stock < 10 ? ' (ใกล้หมด)' : ' (พอเพียง)';
-                    return '📊 สต็อกคงเหลือ: ' + stock + ' หน่วย' + status;
-                  }
-                }
-              }
-            },
-            elements: {
-              bar: {
-                borderRadius: 15
-              }
-            }
+            });
           }
         });
-      }
 
-      // เพิ่มสินค้าใหม่
-      addProductForm.addEventListener("submit", function (e) {
-        e.preventDefault();
+        // เพิ่มเอฟเฟกต์ hover สำหรับปุ่ม
+        document.addEventListener('mouseover', function (e) {
+          if (e.target.classList.contains('btn-success')) {
+            e.target.style.transform = 'translateY(-2px) scale(1.02)';
+          }
+          if (e.target.classList.contains('btn-danger')) {
+            e.target.style.transform = 'translateY(-1px) scale(1.05)';
+          }
+        });
 
-        const name = document.getElementById("productName").value.trim();
-        const price = parseFloat(document.getElementById("productPrice").value);
-        const stock = parseInt(document.getElementById("productStock").value);
+        document.addEventListener('mouseout', function (e) {
+          if (e.target.classList.contains('btn-success')) {
+            e.target.style.transform = 'translateY(0) scale(1)';
+          }
+          if (e.target.classList.contains('btn-danger')) {
+            e.target.style.transform = 'translateY(0) scale(1)';
+          }
+        });
 
-        if (!name || isNaN(price) || isNaN(stock)) {
-          showAlert("กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง", 'danger');
-          return;
-        }
+        // เพิ่มเอฟเฟกต์ focus สำหรับ input
+        document.querySelectorAll('.form-control').forEach(input => {
+          input.addEventListener('focus', function () {
+            this.parentElement.style.transform = 'scale(1.02)';
+          });
 
-        if (price < 0) {
-          showAlert("ราคาสินค้าต้องมากกว่าหรือเท่ากับ 0", 'danger');
-          return;
-        }
+          input.addEventListener('blur', function () {
+            this.parentElement.style.transform = 'scale(1)';
+          });
+        });
 
-        if (stock < 0) {
-          showAlert("จำนวนสต็อกต้องมากกว่าหรือเท่ากับ 0", 'danger');
-          return;
-        }
-
-        // ตรวจสอบว่ามีสินค้าชื่อซ้ำหรือไม่
-        const existingProduct = products.find(p => p.name.toLowerCase() === name.toLowerCase());
-        if (existingProduct) {
-          showAlert("มีสินค้าชื่อนี้อยู่ในระบบแล้ว", 'danger');
-          return;
-        }
-
-        products.push({ name, price, stock });
-        localStorage.setItem("products", JSON.stringify(products));
-
-        addProductForm.reset();
+        // แสดงสินค้าครั้งแรก
         renderProducts();
-        showAlert(`เพิ่มสินค้า "${name}" เรียบร้อยแล้ว`);
 
-        // เพิ่มเอฟเฟกต์แฟลช
-        const submitBtn = addProductForm.querySelector('button[type="submit"]');
-        submitBtn.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-          submitBtn.style.transform = 'scale(1)';
-        }, 150);
-      });
-
-      // ลบสินค้า
-      productTable.addEventListener("click", function (e) {
-        if (e.target.tagName === "BUTTON" || e.target.closest('button')) {
-          const button = e.target.tagName === "BUTTON" ? e.target : e.target.closest('button');
-          const index = button.getAttribute("data-index");
-          const productName = products[index].name;
-
-          // ยืนยันการลบ
-          if (confirm(`คุณต้องการลบสินค้า "${productName}" ใช่หรือไม่?`)) {
-            products.splice(index, 1);
-            localStorage.setItem("products", JSON.stringify(products));
-            renderProducts();
-            showAlert(`ลบสินค้า "${productName}" เรียบร้อยแล้ว`);
-          }
+        // เพิ่มข้อมูลตัวอย่างถ้าไม่มีสินค้า
+        if (products.length === 0) {
+          setTimeout(() => {
+            showAlert("💡 เริ่มต้นใช้งานด้วยการเพิ่มสินค้าแรกของคุณ", 'success');
+          }, 2000);
         }
       });
+    </script>
 
-      // เพิ่มเอฟเฟกต์ hover สำหรับปุ่ม
-      document.addEventListener('mouseover', function (e) {
-        if (e.target.classList.contains('btn-success')) {
-          e.target.style.transform = 'translateY(-2px) scale(1.02)';
-        }
-        if (e.target.classList.contains('btn-danger')) {
-          e.target.style.transform = 'translateY(-1px) scale(1.05)';
-        }
-      });
-
-      document.addEventListener('mouseout', function (e) {
-        if (e.target.classList.contains('btn-success')) {
-          e.target.style.transform = 'translateY(0) scale(1)';
-        }
-        if (e.target.classList.contains('btn-danger')) {
-          e.target.style.transform = 'translateY(0) scale(1)';
-        }
-      });
-
-      // เพิ่มเอฟเฟกต์ focus สำหรับ input
-      document.querySelectorAll('.form-control').forEach(input => {
-        input.addEventListener('focus', function () {
-          this.parentElement.style.transform = 'scale(1.02)';
-        });
-
-        input.addEventListener('blur', function () {
-          this.parentElement.style.transform = 'scale(1)';
-        });
-      });
-
-      // แสดงสินค้าครั้งแรก
-      renderProducts();
-
-      // เพิ่มข้อมูลตัวอย่างถ้าไม่มีสินค้า
-      if (products.length === 0) {
-        setTimeout(() => {
-          showAlert("💡 เริ่มต้นใช้งานด้วยการเพิ่มสินค้าแรกของคุณ", 'success');
-        }, 2000);
-      }
-    });
-  </script>
-
-  <!-- Bootstrap Bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
